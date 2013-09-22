@@ -66,7 +66,9 @@
 					window.addEventListener("mousemove", getMousePos,false);
 					brick_screen.setAttribute("style", "cursor:none;");
 					this.boundary = brick_screen.getBoundingClientRect();
-					this.bricks = create_bricks();
+					if(bricks_game.lives ==3){					
+						this.bricks = create_bricks();	
+					}				
 					//console.log(this.bricks);
 					this.update();
 					//console.log(this.playing);
@@ -84,8 +86,7 @@
 			draw_bricks(bricks_game.bricks);
 			//console.log(bricks_game.playing);
 			bricks_game.writeText();
-			if(bricks_game.bricksLeft == 0){
-				
+			if(bricks_game.bricksLeft == 0){			
 				bricks_game.nextLevel();
 			}
 			if(bricks_game.playing){
@@ -98,7 +99,12 @@
 			if(ball.y >= 250 || ball.y < 60){ 
 				bricks_game.level++;
 				ball.dy++;
-				bricks_game.bricks = create_bricks();
+				for(var brick = 0; brick <bricks_game.bricks.length; brick++){
+					if(!bricks_game.bricks[brick].alive){
+						bricks_game.bricks[brick].alive = true;
+						bricks_game.bricksLeft++;
+					}
+				}
 			}
 		}
 		
@@ -125,7 +131,9 @@
 				b_ctx.font = "30px Sans-Serif";
 				b_ctx.fillText("GAME OVER", 250,250);
 				b_ctx.font = "14px Sans-Serif";
-				b_ctx.fillText("Click to play again.",285,265);			
+				b_ctx.fillText("Click to play again.",285,265);
+				bricks_game.bricksLeft = 0;
+				delete bricks_game.bricks;		
 			}
 		}
 			
@@ -221,7 +229,7 @@
 			 		//console.log(bricks_game.score);
 			 		bricks_game.combo++;
 			 		bricks_game.bricksLeft--;
-			 		//console.log("bricks left = "+bricks_game.bricksLeft);
+			 		console.log("bricks left = "+bricks_game.bricksLeft);
 			 		//check if it hit a side or top or bottom
 			 		if(ball.x + ball.WIDTH - this.x >0){
 			 			var xOverlap = ball.x + ball.WIDTH - this.x
