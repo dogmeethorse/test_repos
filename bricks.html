@@ -4,9 +4,8 @@
 	<head>
 		<meta charset="UTF-8">
 		<style type = "text/css">
-			canvas{
+			#gameScreen{
 				border-left: 1px solid black;
-				margin-left : 100px;
 				background-color : black;
 			}    
 		</style>   
@@ -120,7 +119,7 @@
 			ball.x = 0;
 			ball.y = 250;
 			ball.dx = 2;
-			ball.dy = 2;
+			ball.dy = 2 + bricks_game.level - 1;
 			bricks_game.combo = 1;
 			bricks_game.lives--;
 			if(bricks_game.lives == 0){		
@@ -133,7 +132,8 @@
 				b_ctx.font = "14px Sans-Serif";
 				b_ctx.fillText("Click to play again.",285,265);
 				bricks_game.bricksLeft = 0;
-				delete bricks_game.bricks;		
+				delete bricks_game.bricks;
+				bricks_game.level = 1;		
 			}
 		}
 			
