@@ -14,7 +14,7 @@
 	</head>
 	<body>
 		<div>
-			<canvas id="gameScreen"  height="400" width="700" onclick="bricks_game.start()">Your Browser does not support Canvas.</canvas>
+			<canvas id="gameScreen"  height="400" width="700"  onclick="bricks_game.start()">Your Browser does not support Canvas.</canvas>
 		</div>
 		<script>
 		var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
@@ -26,8 +26,9 @@
 		b_ctx = brick_screen.getContext('2d');
 		b_ctx.fillStyle = "white";
 		
+		
 		SCREEN_WIDTH = brick_screen.width;
-		console.log(SCREEN_WIDTH);
+		//console.log(SCREEN_WIDTH);
 		SCREEN_HEIGHT = brick_screen.height;
 		var mousex= null;
 		
@@ -35,18 +36,35 @@
 			playing : false,
 			score : 0,
 			level : 1,
+			combo : 1,
+			lives : 3,
 			boundary: null,
-			bricks: null
+			bricks: null,
+			bricksLeft : 0
+			
 		}
 		function getMousePos(e){
 			mousex = e.clientX - bricks_game.boundary.left;			
 		}
+		bricks_game.welcomeScreen = function(){
+			
+			b_ctx.fillStyle = 'white';
+			b_ctx.font = "120px Andale Mono";
+			b_ctx.fillText('BRICKS', 150,200);
+			b_ctx.font = "14px Sans-Serif";
+			b_ctx.fillText('click to play', 315,220);
+		}
 		
 		bricks_game.start = function(){
-				console.log("start function");
+				//console.log("start function");
 				if(!bricks_game.playing){			
 					bricks_game.playing = true;
+					if(bricks_game.lives == 0){
+						bricks_game.lives = 3;
+						bricks_game.score = 0;
+					}
 					window.addEventListener("mousemove", getMousePos,false);
+					brick_screen.setAttribute("style", "cursor:none;");
 					this.boundary = brick_screen.getBoundingClientRect();
 					this.bricks = create_bricks();
 					//console.log(this.bricks);
@@ -60,13 +78,54 @@
 			b_ctx.clearRect(0,0,SCREEN_WIDTH,SCREEN_HEIGHT);
 			ball.update();
 			paddle.update();
+			check_bricks(bricks_game.bricks);
 			paddle.draw();
 			ball.draw();
-			//draw_bricks(bricks_game.bricks);
+			draw_bricks(bricks_game.bricks);
 			//console.log(bricks_game.playing);
+			bricks_game.writeText();
+			if(bricks_game.bricksLeft == 0){
+				
+				bricks_game.nextLevel();
+			}
 			if(bricks_game.playing){
 				window.requestAnimationFrame(bricks_game.update);
-				console.log(this.playing);
+				//console.log(this.playing);
+			}
+		}
+		
+		bricks_game.nextLevel = function(){
+			if(ball.y >= 250 || ball.y < 60){ 
+				bricks_game.level++;
+				ball.dy++;
+				bricks_game.bricks = create_bricks();
+			}
+		}
+		
+		bricks_game.writeText = function(){
+			b_ctx.fillStyle = 'white';
+			b_ctx.font = "14px Sans-Serif";
+			b_ctx.fillText('COMBO: ' + bricks_game.combo + '  SCORE: '+ bricks_game.score, 450,20);
+			b_ctx.fillText('LEVEL: ' + bricks_game.level + '  LIVES: ' + bricks_game.lives,10,20);
+		}
+		
+		bricks_game.death = function(){
+			bricks_game.playing = false;
+			ball.x = 0;
+			ball.y = 250;
+			ball.dx = 2;
+			ball.dy = 2;
+			bricks_game.combo = 1;
+			bricks_game.lives--;
+			if(bricks_game.lives == 0){		
+				brick_screen.style.cursor  = "";
+				b_ctx.clearRect(0,0,700,50);
+				bricks_game.writeText();
+				b_ctx.fillStyle = 'white';
+				b_ctx.font = "30px Sans-Serif";
+				b_ctx.fillText("GAME OVER", 250,250);
+				b_ctx.font = "14px Sans-Serif";
+				b_ctx.fillText("Click to play again.",285,265);			
 			}
 		}
 			
@@ -77,10 +136,10 @@
 			y : SCREEN_HEIGHT * 7/8,
 			
 			draw : function(){
-				console.log( 'draw says hi');
+				//console.log( 'draw says hi');
 				b_ctx.fillStyle = "white";
 				b_ctx.fillRect(this.x,this.y, this.WIDTH, this.HEIGHT);
-				console.log(this.WIDTH/2);
+				//console.log(this.WIDTH/2);
 			},
 			update : function(){
 				if (mousex < 0){
@@ -99,7 +158,7 @@
 			HEIGHT : 10,
 			
 			x : 0,
-			y : 0,
+			y : 250,
 			dx : 2,
 			dy: 2,
 			
@@ -114,13 +173,14 @@
 				this.y += this.dy;
 				//check to see if paddle is hit
 				if(this.y >= paddle.y && this.y <= paddle.y+paddle.HEIGHT){
-					//middle of paddle?
-					if(this.x >= paddle.x  && this.x <= paddle.x + paddle.WIDTH){
+					//paddle
+					if(this.x + this.WIDTH >= paddle.x  && this.x <= paddle.x + paddle.WIDTH){
 						this.dy = -1 * this.dy;
 						this.y = paddle.y - this.HEIGHT;
+						bricks_game.combo = 1;
 					}
 					//left of paddle
-					if(this.x >=paddle.x && this.x <paddle.x + paddle.WIDTH/3){
+					if(this.x +this.WIDTH >=paddle.x && this.x <paddle.x + paddle.WIDTH/3){
 						this.dx -=2; 
 						return;
 					}
@@ -130,6 +190,7 @@
 						return;
 					}
 				}
+				//check walls
 				if(this.x + this.WIDTH >= SCREEN_WIDTH || this.x <=0){
 					this.dx = -1*this.dx;
 				}
@@ -137,12 +198,7 @@
 					this.dy = -1*this.dy;
 				}
 				if(this.y >= SCREEN_HEIGHT){
-					bricks_game.playing = false;
-					this.x = 0;
-					this.y = 0;
-					this.dx = 2;
-					this.dy = 2;
-					
+					bricks_game.death();
 				}
 			}
 		}
@@ -154,13 +210,47 @@
 			this.y = y;
 			this.alive = true;
 			
-			Brick.prototype.isHit = function(){
-
+			Brick.prototype.hitCheck = function(){
+			 //check for hit from bottom
+			 //console.log('hitCheck executed');
+			 if(this.y + this.HEIGHT >= ball.y && this.y < ball.y +ball.HEIGHT){
+			 	if(this.x <= ball.x + ball.WIDTH && this.x + this.WIDTH >= ball.x){
+			 		//console.log('brick hit');
+			 		this.alive = false;
+			 		bricks_game.score += (50*bricks_game.combo);
+			 		//console.log(bricks_game.score);
+			 		bricks_game.combo++;
+			 		bricks_game.bricksLeft--;
+			 		//console.log("bricks left = "+bricks_game.bricksLeft);
+			 		//check if it hit a side or top or bottom
+			 		if(ball.x + ball.WIDTH - this.x >0){
+			 			var xOverlap = ball.x + ball.WIDTH - this.x
+			 		}
+			 		else{
+			 			var xOverlap = this.x + this.WIDTH - ball.x;
+			 		}
+			 		//calc yOverlap
+			 		if(this.y - (ball.y + ball.WIDTH) > 0)
+			 			var yOverlap = this.y - (ball.y + ball.WIDTH)
+			 		else{
+			 		var yOverlap = ball.y - (this.y + this.WIDTH)
+			 		}
+			 		if(xOverlap>yOverlap){//this should mean hit from bottom or top
+			 			ball.dy = -1 * ball.dy;
+			 		}
+			 		else{ //should be side hit
+			 			ball.dx = -1 * ball.dx;
+			 		}
+			 		
+			 	}
+			 }
 			}
 		
 			Brick.prototype.draw = function(){
-				b_ctx.fillStyle = "white";
-				b_ctx.fillRect(this.x,this.y,this.WIDTH,this.HEIGHT);
+				if(this.alive){
+					b_ctx.fillStyle = "white";
+					b_ctx.fillRect(this.x,this.y,this.WIDTH,this.HEIGHT);
+				}
 			}
 		}
 		
@@ -172,15 +262,27 @@
 			}
 		}
 		
+		function check_bricks(brick_array){
+			for(var brick = 0; brick< brick_array.length; brick++){
+				if(brick_array[brick].alive){
+					brick_array[brick].hitCheck();
+				}
+			}
+		}
+		
 		function create_bricks(){
 			var brick_array = new Array();
 			for(var bricky = 70; bricky < 70 + 15 * 10; bricky+=15){
 				for(var brickx = 0; brickx < SCREEN_WIDTH; brickx+= SCREEN_WIDTH/10){
 					brick_array.push(new Brick(brickx,bricky));
+					bricks_game.bricksLeft++;
 				}
 			}
 			return brick_array;
-		}		
+		}
+		
+		bricks_game.welcomeScreen();
+				
 		</script>
 	</body>
 </html> 
