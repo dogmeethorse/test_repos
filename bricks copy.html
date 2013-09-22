@@ -1,0 +1,143 @@
+<!DOCTYPE HTML>
+
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<style type = "text/css">
+			canvas{
+				margin-left : 100px;
+				background-color : black;
+			}    
+		</style>   
+	<title>BRICKS</title> 
+	</head>
+	<body>
+		<div>
+			<canvas id="gameScreen"  height="400" width="700" onclick="bricks_game.start()">Your Browser does not support Canvas.</canvas>
+		</div>
+		<script>
+		var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+                            		window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+  		
+  		window.requestAnimationFrame = requestAnimationFrame;
+  											
+		brick_screen = document.getElementById('gameScreen');
+		b_ctx = brick_screen.getContext('2d');
+		b_ctx.fillStyle = "white";
+		
+		SCREEN_WIDTH = brick_screen.width;
+		console.log(SCREEN_WIDTH);
+		SCREEN_HEIGHT = brick_screen.height;
+		var mousex= null;
+		
+		var bricks_game = {
+			playing : false,
+			score : 0,
+			level : 1,
+			boundary: null
+		}
+		function getMousePos(e){
+			mousex = e.clientX - bricks_game.boundary.left;			
+		}
+		
+		bricks_game.start = function(){
+				console.log("start function");
+				if(!bricks_game.playing){			
+					bricks_game.playing = true;
+					window.addEventListener("mousemove", getMousePos,false);
+					this.boundary = brick_screen.getBoundingClientRect();
+					this.update();
+					console.log(this.playing);
+				}
+			}
+		
+		bricks_game.update = function(){
+			//console.log('hello');
+			b_ctx.clearRect(0,0,SCREEN_WIDTH,SCREEN_HEIGHT);
+			ball.update();
+			paddle.update();
+			paddle.draw();
+			ball.draw();
+			console.log(bricks_game.playing);
+			if(bricks_game.playing){
+				window.requestAnimationFrame(bricks_game.update);
+				console.log(this.playing);
+			}
+		}
+			
+		var paddle = {
+			WIDTH : 100,
+			HEIGHT : 10,
+			x : 100,
+			y : SCREEN_HEIGHT * 7/8,
+			
+			draw : function(){
+				console.log( 'draw says hi');
+				b_ctx.fillStyle = "white";
+				b_ctx.fillRect(this.x,this.y, this.WIDTH, this.HEIGHT);
+				console.log(this.WIDTH/2);
+			},
+			update : function(){
+				if (mousex < 0){
+					this.x = 0;
+				}
+				else if (mousex > SCREEN_WIDTH - this.WIDTH){
+					this.x= SCREEN_WIDTH - this.WIDTH;
+				}  
+				else{	
+					this.x= mousex;
+				}
+			}
+		}
+		var ball = {
+			WIDTH : 10,
+			HEIGHT : 10,
+			
+			x : 0,
+			y : 0,
+			dx : 5,
+			dy: 5,
+			
+			draw : function(){
+				b_ctx.fillStyle = 'white';
+				b_ctx.fillRect(this.x,this.y,this.WIDTH,this.HEIGHT);
+			},
+			
+			update : function(){
+				this.x += this.dx;
+				this.y += this.dy;
+				if(this.x >= paddle.x && this.x <= paddle.x + paddle.WIDTH && this.y >= paddle.y && this.y <= paddle.y+paddle.HEIGHT){
+					this.dy = -1 * this.dy;
+					this.y = paddle.y - this.HEIGHT;
+				}
+				if(this.x + this.WIDTH >= SCREEN_WIDTH || this.x <=0){
+					this.dx = -1*this.dx;
+				}
+				if(this.y <= 0){
+					this.dy = -1*this.dy;
+				}
+				if(this.y >= SCREEN_HEIGHT){
+					bricks_game.playing = false;
+					this.x = 0;
+					this.y = 0;
+					this.dx = 5;
+					this.dx = 5;
+					
+				}
+			}
+		}
+		
+		function Brick(x,y){
+			this.WIDTH = SCREEN_WIDTH/10;
+			this.HEIGHT = 10;
+			this.x = x;
+			this.y = y;
+			
+			Brick.prototype.isHit = function(){
+
+			}
+		}
+		
+		</script>
+	</body>
+</html> 
