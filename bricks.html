@@ -12,7 +12,7 @@
 	<title>BRICKS</title> 
 	</head>
 	<body>
-		<div>
+		<div id='test'>
 			<canvas id="gameScreen"  height="400" width="700"  onclick="bricks_game.start()">Your Browser does not support Canvas.</canvas>
 		</div>
 		<script>
@@ -21,9 +21,16 @@
   		
   		window.requestAnimationFrame = requestAnimationFrame;
   											
-		brick_screen = document.getElementById('gameScreen');
-		b_ctx = brick_screen.getContext('2d');
+		var brick_screen = document.getElementById('gameScreen');
+		var b_ctx = brick_screen.getContext('2d');
 		b_ctx.fillStyle = "white";
+		var showdx = document.createElement("div");
+		var showdy = document.createElement("div");
+		var newDiv = document.createElement("div");
+		var test = document.getElementById("test");
+		console.log(test);
+		document.body.insertBefore(showdx, test);
+		document.body.insertBefore(showdy,test);
 		
 		
 		SCREEN_WIDTH = brick_screen.width;
@@ -85,6 +92,8 @@
 			draw_bricks(bricks_game.bricks);
 			//console.log(bricks_game.playing);
 			bricks_game.writeText();
+			showdx.innerHTML = "dx ="+ ball.dx;
+			showdy.innerHTML = "dy ="+ ball.dy;
 			if(bricks_game.bricksLeft == 0){			
 				bricks_game.nextLevel();
 			}
@@ -97,7 +106,12 @@
 		bricks_game.nextLevel = function(){
 			if(ball.y >= 250 || ball.y < 60){ 
 				bricks_game.level++;
-				ball.dy++;
+				if(ball.dy < 0){
+					ball.dy--;
+				}
+				if(ball.dy >0){
+					ball.dy++;
+				}
 				for(var brick = 0; brick <bricks_game.bricks.length; brick++){
 					if(!bricks_game.bricks[brick].alive){
 						bricks_game.bricks[brick].alive = true;
@@ -230,26 +244,7 @@
 			 		bricks_game.combo++;
 			 		bricks_game.bricksLeft--;
 			 		console.log("bricks left = "+bricks_game.bricksLeft);
-			 		//check if it hit a side or top or bottom
-			 		if(ball.x + ball.WIDTH - this.x >0){
-			 			var xOverlap = ball.x + ball.WIDTH - this.x
-			 		}
-			 		else{
-			 			var xOverlap = this.x + this.WIDTH - ball.x;
-			 		}
-			 		//calc yOverlap
-			 		if(this.y - (ball.y + ball.WIDTH) > 0)
-			 			var yOverlap = this.y - (ball.y + ball.WIDTH)
-			 		else{
-			 		var yOverlap = ball.y - (this.y + this.WIDTH)
-			 		}
-			 		if(xOverlap>yOverlap){//this should mean hit from bottom or top
-			 			ball.dy = -1 * ball.dy;
-			 		}
-			 		else{ //should be side hit
-			 			ball.dx = -1 * ball.dx;
-			 		}
-			 		
+			 		ball.dy = -1 * ball.dy;	 				 		
 			 	}
 			 }
 			}
