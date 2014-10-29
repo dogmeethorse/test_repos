@@ -7,34 +7,48 @@
 			#gameScreen{
 				border-left: 1px solid black;
 				background-color : black;
-			}    
+				margin : 300px;
+				margin-top : 100px;
+			}
+			#box{
+				position: absolute;
+   				background-color: black;
+   				color: white;
+   				font-family:Sans-Serif;
+   				padding: 15px;
+    			width: 280px;
+    			height: 170px;
+    			border: 3px solid white;
+    			top: 220px;
+    			left: 520px;
+			}
 		</style>   
 	<title>BRICKS</title> 
 	</head>
 	<body>
-		<div id='test'>
-			<canvas id="gameScreen"  height="400" width="700"  onclick="bricks_game.start()">Your Browser does not support Canvas.</canvas>
+		<div id="box">
+			<h2> HIGH SCORE!</h2>
+			<p>ENTER YOUR NAME:</P>
+			<form id="nameform" action="#" onsubmit="bricks_game.postScore()">
+				<input  value ="NAME" name='name'></input>
+				<input type="submit" value="OK"></input>
+			</form>
 		</div>
+		<canvas id="gameScreen"  height="400" width="700"  onclick="bricks_game.start()">Your Browser does not support Canvas.</canvas>
+		
 		<script>
 		var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
                             		window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
   		
   		window.requestAnimationFrame = requestAnimationFrame;
-  											
+  	
+  		var nameForm = document.getElementById("nameform");	
+  		//nameForm.addEventListener('submit', function(){bricks_game.postScore(nameform[0].value, bricks_game.score )}, false);								
 		var brick_screen = document.getElementById('gameScreen');
 		var b_ctx = brick_screen.getContext('2d');
 		b_ctx.fillStyle = "white";
-		var showdx = document.createElement("div");
-		var showdy = document.createElement("div");
-		var newDiv = document.createElement("div");
-		var test = document.getElementById("test");
-		console.log(test);
-		document.body.insertBefore(showdx, test);
-		document.body.insertBefore(showdy,test);
-		
 		
 		SCREEN_WIDTH = brick_screen.width;
-		//console.log(SCREEN_WIDTH);
 		SCREEN_HEIGHT = brick_screen.height;
 		var mousex= null;
 		
@@ -52,6 +66,7 @@
 		function getMousePos(e){
 			mousex = e.clientX - bricks_game.boundary.left;			
 		}
+		
 		bricks_game.welcomeScreen = function(){
 			
 			b_ctx.fillStyle = 'white';
@@ -59,6 +74,55 @@
 			b_ctx.fillText('BRICKS', 150,200);
 			b_ctx.font = "14px Sans-Serif";
 			b_ctx.fillText('click to play', 315,220);
+		}
+		
+				
+		bricks_game.showScores = function(scores){
+			console.log(typeof scores);
+			console.log(scores);
+			var xoffset = 50;
+			var yoffset = 100;
+			b_ctx.fillStyle = 'white';
+			b_ctx.fillText("HI SCORES", 315 ,50);
+			for(var entry in scores){
+				console.log(scores[entry]);
+				b_ctx.font = "14px Sans-Serif";
+				b_ctx.fillText('name: ' + scores[entry].name + '  SCORE: '+ scores[entry].score, xoffset, yoffset);
+				yoffset += 20;
+			}
+		}
+			
+		bricks_game.getScores = function(){
+			var scores;
+			var scoresRequest = new XMLHttpRequest();
+			scoresRequest.onreadystatechange = function(){
+				if(scoresRequest.readyState === 4){
+					if(scoresRequest.status === 200 || scoresRequest.status === 304){
+						scores = JSON.parse(scoresRequest.responseText);
+						bricks_game.showScores(scores);
+					}
+				}		
+			}
+			scoresRequest.open("GET", "/scores", true);
+			scoresRequest.send();
+			//return scores;
+		}
+		
+		bricks_game.postScore = function(name, score){
+			var scoreSend = new XMLHttpRequest();
+			/*scoreSend.onreadystatechange = function(){
+				if(scoreSend.readyState === 4){
+					if(scoreSend.status === 200 || scoresRequest.status === 304){
+					}
+				}		
+			}*/
+			var params = "name="+String(nameForm[0].value) + "&score="+ String(bricks_game.score);
+			
+			scoreSend.open("POST", "/", true);
+			scoreSend.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+			scoreSend.setRequestHeader("Content-length", params.length);
+			//scoreSend.setRequestHeader("Connection", "close")
+			scoreSend.send(params);
 		}
 		
 		bricks_game.start = function(){
@@ -82,7 +146,6 @@
 			}
 		
 		bricks_game.update = function(){
-			//console.log('hello');
 			b_ctx.clearRect(0,0,SCREEN_WIDTH,SCREEN_HEIGHT);
 			ball.update();
 			paddle.update();
@@ -90,16 +153,12 @@
 			paddle.draw();
 			ball.draw();
 			draw_bricks(bricks_game.bricks);
-			//console.log(bricks_game.playing);
 			bricks_game.writeText();
-			showdx.innerHTML = "dx ="+ ball.dx;
-			showdy.innerHTML = "dy ="+ ball.dy;
 			if(bricks_game.bricksLeft == 0){			
 				bricks_game.nextLevel();
 			}
 			if(bricks_game.playing){
 				window.requestAnimationFrame(bricks_game.update);
-				//console.log(this.playing);
 			}
 		}
 		
@@ -266,7 +325,7 @@
 		}
 		
 		function check_bricks(brick_array){
-			for(var brick = 0; brick< brick_array.length; brick++){
+			for(var brick = 0; brick < brick_array.length; brick++){
 				if(brick_array[brick].alive){
 					brick_array[brick].hitCheck();
 				}
