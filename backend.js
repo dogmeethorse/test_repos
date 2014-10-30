@@ -15,29 +15,36 @@ app.get('/', function(request, response) {
 
 app.get('/scores', function(request, response){
 	var scores;
-	pg.connect(dataUrl, function(err, client) {
-  		client.query('SELECT * FROM  hiscores;', function(err, results){
-  			console.log(results);
+	pg.connect(dataUrl, function(err, client, done) {
+  		client.query('SELECT * FROM  hiscores ORDER BY score DESC;', function(err, results){
+  			if(err){
+  				response.status(500).send();
+  				console.log("db error");
+  				done();
+  			}
   			scores = results.rows;
   			response.status(200).send(scores);
+  			done();
   		});
 	});
 
 });
-app.get('/', function(request, response){
-	console.log('hi get');
-});
+
 app.post('/', function(request, response){
-	console.log('hi post');
-	console.log(request.method);
-	console.log(request.body);
-	//pg.connect(dataUrl, function(err, client){
-	//	client.query('', function(err, results){
-		
-	//	});
-	//})
-	//response.sendfile(__dirname + '/bricks.html');
-	//response.end();
+	var queryString = "INSERT INTO hiscores VALUES ('" + String(request.body.name) + "', " +
+		String(request.body.score) + ");";
+	console.log(queryString); 
+	pg.connect(dataUrl, function(err, client, done){
+		client.query(queryString, function(err, results){
+			queryString = "DELETE FROM hiscores WHERE score <" +
+						" (SELECT score FROM hiscores ORDER BY score DESC offset 20 limit 1);"
+			client.query(queryString, function(err, results){
+				console.log(results);
+				done();
+			});
+		});
+	});
+	response.status(200).send();
 });
 
 var port = Number(process.env.PORT || 5000);

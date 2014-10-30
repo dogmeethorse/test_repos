@@ -11,6 +11,7 @@
 				margin-top : 100px;
 			}
 			#box{
+				display: none;
 				position: absolute;
    				background-color: black;
    				color: white;
@@ -29,9 +30,9 @@
 		<div id="box">
 			<h2> HIGH SCORE!</h2>
 			<p>ENTER YOUR NAME:</P>
-			<form id="nameform" action="#" onsubmit="bricks_game.postScore()">
+			<form id="nameform">
 				<input  value ="NAME" name='name'></input>
-				<input type="submit" value="OK"></input>
+				<button id="ok">OK</button>
 			</form>
 		</div>
 		<canvas id="gameScreen"  height="400" width="700"  onclick="bricks_game.start()">Your Browser does not support Canvas.</canvas>
@@ -43,7 +44,15 @@
   		window.requestAnimationFrame = requestAnimationFrame;
   	
   		var nameForm = document.getElementById("nameform");	
-  		//nameForm.addEventListener('submit', function(){bricks_game.postScore(nameform[0].value, bricks_game.score )}, false);								
+		var nameBox = document.getElementById("box");
+		
+		var okButton = document.getElementById("ok");
+		okButton.addEventListener('click', function(evt){
+			bricks_game.postScore();
+			evt.preventDefault();
+		})
+		
+						
 		var brick_screen = document.getElementById('gameScreen');
 		var b_ctx = brick_screen.getContext('2d');
 		b_ctx.fillStyle = "white";
@@ -52,8 +61,20 @@
 		SCREEN_HEIGHT = brick_screen.height;
 		var mousex= null;
 		
+//METHODS FOR THE DIALOG BOX THAT TAKES YOUR HI-SCORE AT THE END OF THE GAME	
+		nameBox.show = function(){
+			nameBox.style.display = "inline";
+		}
+		
+		nameBox.hide = function(){
+			nameBox.style.display = "none";
+		}
+		
+//GAME SET UP AND INTRO CODE
+	var getsSent= 0; //temporary global variable for testing;
 		var bricks_game = {
 			playing : false,
+			checkedScores : true,
 			score : 0,
 			level : 1,
 			combo : 1,
@@ -68,30 +89,54 @@
 		}
 		
 		bricks_game.welcomeScreen = function(){
-			
+			b_ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 			b_ctx.fillStyle = 'white';
 			b_ctx.font = "120px Andale Mono";
 			b_ctx.fillText('BRICKS', 150,200);
 			b_ctx.font = "14px Sans-Serif";
 			b_ctx.fillText('click to play', 315,220);
+			setTimeout(function(){
+				if(!bricks_game.playing){
+					bricks_game.getScores();
+				}
+			}, 5000);
 		}
-		
 				
 		bricks_game.showScores = function(scores){
-			console.log(typeof scores);
 			console.log(scores);
-			var xoffset = 50;
+			var xoffset = 100;
 			var yoffset = 100;
+			b_ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 			b_ctx.fillStyle = 'white';
 			b_ctx.fillText("HI SCORES", 315 ,50);
 			for(var entry in scores){
-				console.log(scores[entry]);
 				b_ctx.font = "14px Sans-Serif";
-				b_ctx.fillText('name: ' + scores[entry].name + '  SCORE: '+ scores[entry].score, xoffset, yoffset);
-				yoffset += 20;
+				if(entry < 10){
+					b_ctx.fillText('NAME: ' + scores[entry].name , xoffset, yoffset);
+					b_ctx.fillText('SCORE: '+ scores[entry].score, xoffset * 3, yoffset);
+					yoffset += 20;
+				}
+			}
+			setTimeout(function(){
+				if(!bricks_game.playing){
+					bricks_game.welcomeScreen();
+				}
+			}, 5000);
+		}
+		
+		bricks_game.getName = function(){
+			nameBox.show();
+		}
+		
+		bricks_game.checkScore = function(scores){
+			if(scores[scores.length-1].score < bricks_game.score ||
+			scores.length <=20){
+				bricks_game.getName();
 			}
 		}
-			
+		
+// CODE THAT COMMUNICATES WITH THE SERVER			
+		
 		bricks_game.getScores = function(){
 			var scores;
 			var scoresRequest = new XMLHttpRequest();
@@ -99,36 +144,44 @@
 				if(scoresRequest.readyState === 4){
 					if(scoresRequest.status === 200 || scoresRequest.status === 304){
 						scores = JSON.parse(scoresRequest.responseText);
-						bricks_game.showScores(scores);
+						if(bricks_game.checkedScores){ //hacky way to make sure we aren't checking to see if we have a high score
+							bricks_game.showScores(scores);
+						}
+						else{
+							bricks_game.checkScore(scores);
+							bricks_game.checkedScores = true;
+						}
 					}
 				}		
 			}
 			scoresRequest.open("GET", "/scores", true);
 			scoresRequest.send();
-			//return scores;
 		}
 		
 		bricks_game.postScore = function(name, score){
 			var scoreSend = new XMLHttpRequest();
-			/*scoreSend.onreadystatechange = function(){
+			scoreSend.onreadystatechange = function(){
 				if(scoreSend.readyState === 4){
-					if(scoreSend.status === 200 || scoresRequest.status === 304){
-					}
+					nameBox.hide();
+					bricks_game.welcomeScreen();
 				}		
-			}*/
+			}
 			var params = "name="+String(nameForm[0].value) + "&score="+ String(bricks_game.score);
 			
 			scoreSend.open("POST", "/", true);
 			scoreSend.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 			scoreSend.setRequestHeader("Content-length", params.length);
-			//scoreSend.setRequestHeader("Connection", "close")
+			scoreSend.setRequestHeader("Connection", "close")
 			scoreSend.send(params);
+			return false;
 		}
+
+//GAME LOOP CODE
 		
 		bricks_game.start = function(){
-				//console.log("start function");
 				if(!bricks_game.playing){			
 					bricks_game.playing = true;
+					bricks_game.checkedScores = false;
 					if(bricks_game.lives == 0){
 						bricks_game.lives = 3;
 						bricks_game.score = 0;
@@ -139,9 +192,7 @@
 					if(bricks_game.lives ==3){					
 						this.bricks = create_bricks();	
 					}				
-					//console.log(this.bricks);
-					this.update();
-					//console.log(this.playing);
+					this.update();	
 				}
 			}
 		
@@ -206,7 +257,8 @@
 				b_ctx.fillText("Click to play again.",285,265);
 				bricks_game.bricksLeft = 0;
 				delete bricks_game.bricks;
-				bricks_game.level = 1;		
+				bricks_game.level = 1;
+				bricks_game.getScores();	
 			}
 		}
 			
@@ -217,10 +269,8 @@
 			y : SCREEN_HEIGHT * 7/8,
 			
 			draw : function(){
-				//console.log( 'draw says hi');
 				b_ctx.fillStyle = "white";
 				b_ctx.fillRect(this.x,this.y, this.WIDTH, this.HEIGHT);
-				//console.log(this.WIDTH/2);
 			},
 			update : function(){
 				if (mousex < 0){
@@ -283,7 +333,7 @@
 				}
 			}
 		}
-		
+//BRICK PSEUDOCLASS		
 		function Brick(x,y){
 			this.WIDTH = SCREEN_WIDTH/10-1;
 			this.HEIGHT = 14;
@@ -296,10 +346,8 @@
 			 //console.log('hitCheck executed');
 			 if(this.y + this.HEIGHT >= ball.y && this.y < ball.y +ball.HEIGHT){
 			 	if(this.x <= ball.x + ball.WIDTH && this.x + this.WIDTH >= ball.x){
-			 		//console.log('brick hit');
 			 		this.alive = false;
 			 		bricks_game.score += (50*bricks_game.combo);
-			 		//console.log(bricks_game.score);
 			 		bricks_game.combo++;
 			 		bricks_game.bricksLeft--;
 			 		console.log("bricks left = "+bricks_game.bricksLeft);
@@ -343,8 +391,7 @@
 			return brick_array;
 		}
 		
-		bricks_game.welcomeScreen();
-				
+		bricks_game.welcomeScreen();				
 		</script>
 	</body>
 </html> 
