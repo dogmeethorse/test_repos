@@ -129,8 +129,8 @@
 		}
 		
 		bricks_game.checkScore = function(scores){
-			if(scores[scores.length-1].score < bricks_game.score ||
-			scores.length <=20){
+			if(scores[scores.length-1].score < bricks_game.score||
+			scores.length < 15){
 				bricks_game.getName();
 			}
 		}

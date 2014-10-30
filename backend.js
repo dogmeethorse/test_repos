@@ -16,7 +16,7 @@ app.get('/', function(request, response) {
 app.get('/scores', function(request, response){
 	var scores;
 	pg.connect(dataUrl, function(err, client, done) {
-  		client.query('SELECT * FROM  hiscores ORDER BY score DESC;', function(err, results){
+  		client.query('SELECT * FROM  hiscores ORDER BY score DESC limit 15;', function(err, results){
   			if(err){
   				response.status(500).send();
   				console.log("db error");
