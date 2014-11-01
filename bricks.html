@@ -112,8 +112,8 @@
 			for(var entry in scores){
 				b_ctx.font = "14px Sans-Serif";
 				if(entry < 10){
-					b_ctx.fillText('NAME: ' + scores[entry].name , xoffset, yoffset);
-					b_ctx.fillText('SCORE: '+ scores[entry].score, xoffset * 3, yoffset);
+					b_ctx.fillText('      ' + scores[entry].name , xoffset + 100, yoffset);
+					b_ctx.fillText('      '+ scores[entry].score, xoffset * 3.5, yoffset);
 					yoffset += 20;
 				}
 			}
@@ -158,7 +158,7 @@
 			scoresRequest.send();
 		}
 		
-		bricks_game.postScore = function(name, score){
+		bricks_game.postScore = function(){
 			var scoreSend = new XMLHttpRequest();
 			scoreSend.onreadystatechange = function(){
 				if(scoreSend.readyState === 4){
@@ -166,7 +166,11 @@
 					bricks_game.welcomeScreen();
 				}		
 			}
-			var params = "name="+String(nameForm[0].value) + "&score="+ String(bricks_game.score);
+			var name = nameForm[0].value;
+			if(name.length > 10){
+				name= name.substring(0, 10);
+			}
+			var params = "name="+String(name) + "&score="+ String(bricks_game.score);
 			
 			scoreSend.open("POST", "/", true);
 			scoreSend.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
